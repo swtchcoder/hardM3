@@ -6,6 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
@@ -20,10 +22,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -36,7 +36,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            var index by remember { mutableIntStateOf(0) }
+            val pagerState = rememberPagerState(pageCount = { 2 })
+            val scope = rememberCoroutineScope()
 
             MyApplicationTheme {
                 Scaffold(
@@ -44,15 +45,24 @@ class MainActivity : ComponentActivity() {
                     topBar = { MyTopBar() },
                     bottomBar = {
                         MyNavigationBar(
-                            index,
-                            handler = { index = it }
+                            index = pagerState.currentPage,
+                            handler = { page ->
+                                scope.launch {
+                                    pagerState.animateScrollToPage(page)
+                                }
+                            }
                         )
                     }
                 ) { innerPadding ->
-                    Text(
-                        text = "Page index $index",
+                    HorizontalPager(
+                        state = pagerState,
                         modifier = Modifier.padding(innerPadding)
-                    )
+                    ) { page ->
+                        when (page) {
+                            0 -> MyHomePage()
+                            1 -> MySettingsPage()
+                        }
+                    }
                 }
             }
         }
@@ -113,4 +123,14 @@ fun MySettingsIcon(filled: Boolean) {
         imageVector = if (filled) Icons.Filled.Settings else Icons.Outlined.Settings,
         contentDescription = "Settings"
     )
+}
+
+@Composable
+fun MyHomePage() {
+    Text("Home page")
+}
+
+@Composable
+fun MySettingsPage() {
+    Text("Settings page")
 }
